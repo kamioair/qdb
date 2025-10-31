@@ -1,0 +1,2 @@
+# qdb
+quick database util
