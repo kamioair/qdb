@@ -6,7 +6,7 @@ import (
 )
 
 type setting struct {
-	Connect string `comment:"数据库连接串\n sqlite|./db/data.db&OFF  OFF=(DELETE/MEMORY/WAL/OFF)\n sqlserver|用户名:密码@地址?database=数据库&encrypt=disable\n mysql|用户名:密码@tcp(127.0.0.1:3306)/数据库?charset=utf8mb4&parseTime=True&loc=Local"`
+	Connect string `comment:"数据库连接串\n sqlite|./db/data.db&OFF\n sqlserver|用户名:密码@地址?database=数据库&encrypt=disable\n mysql|用户名:密码@tcp(127.0.0.1:3306)/数据库?charset=utf8mb4&parseTime=True&loc=Local"`
 	Config  struct {
 		OpenLog                bool
 		SkipDefaultTransaction bool
@@ -15,10 +15,13 @@ type setting struct {
 	filePath string
 }
 
-func initBaseConfig() *setting {
+func initBaseConfig(defaultConn string) *setting {
+	if defaultConn == "" {
+		defaultConn = "sqlite|./db/data.db&OFF"
+	}
 	config := &setting{
 		filePath: "./config.yaml",
-		Connect:  "sqlite|./db/data.db&OFF",
+		Connect:  defaultConn,
 		Config: struct {
 			OpenLog                bool
 			SkipDefaultTransaction bool
