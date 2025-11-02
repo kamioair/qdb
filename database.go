@@ -1,14 +1,12 @@
 package qdb
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/kamioair/utils/qconfig"
 	"github.com/kamioair/utils/qio"
 	"github.com/kamioair/utils/qreflect"
 	"github.com/kamioair/utils/qtime"
-	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -21,81 +19,19 @@ import (
 	"time"
 )
 
-// 需要从核心包导入配置，为了避免循环依赖，这里重新定义配置接口
-type BaseConfig interface {
-	GetModuleInfo() (Name string, Desc string, Version string)
-}
-
-var baseCfg BaseConfig
-
-// SetBaseConfig 设置基础配置，由主程序调用
-func SetBaseConfig(cfg BaseConfig) {
-	baseCfg = cfg
-}
-
-type setting struct {
-	Connect string
-	Config  config
-}
-
-type config struct {
-	OpenLog                bool
-	SkipDefaultTransaction bool
-	NoLowerCase            bool
-}
-
 // NewDb 创建DB
 func NewDb(section string) *gorm.DB {
-	if baseCfg == nil {
-		panic(errors.New("base config not set, please call SetBaseConfig first"))
+	setting := initBaseConfig()
+
+	cfg := map[string]any{
+		section: setting,
 	}
 
-	setting := setting{}
-	moduleName, _, _ := baseCfg.GetModuleInfo()
-	cfg := viper.Get(fmt.Sprintf("%s.%s", moduleName, section))
-	if cfg == nil {
-		cfg = viper.Get(section)
-		if cfg == nil {
-			// 写入默认值
-			setting.Connect = "sqlite|./db/data.db&OFF"
-			setting.Config.SkipDefaultTransaction = true
-			setting.Config.NoLowerCase = true
-			// 生成配置内容字符串
-			configModule := map[string]any{}
-			configModule[section] = setting
-			newCfg := ""
-			newCfg += fmt.Sprintf("############################### %s DB Config ###############################\n", section)
-			newCfg += fmt.Sprintf("# %s 数据库配置\n", section)
-			newCfg += "# connect：数据库连接串\n"
-			newCfg += "#   sqlite|./db/data.db&OFF  OFF=(DELETE/MEMORY/WAL/OFF)\n"
-			newCfg += "#   sqlserver|用户名:密码@地址?database=数据库&encrypt=disable\n"
-			newCfg += "#   mysql|用户名:密码@tcp(127.0.0.1:3306)/数据库?charset=utf8mb4&parseTime=True&loc=Local\n"
-			newCfg += "# 其他设置\n"
-			newCfg += "#   openLog：是否打开调试日志\n"
-			newCfg += "#   skipDefaultTransaction：是否跳过默认事务\n"
-			newCfg += "#   noLowerCase：是否不将结构体名和字段名转换为小写字母的形式\n"
-			newCfg += qconfig.ToYAML(configModule, 0, []string{""})
-
-			// 尝试检测是否有变化，如果有则更新文件
-			qconfig.TrySave("./config.yaml", newCfg)
-		} else {
-			js, err := json.Marshal(cfg)
-			if err == nil {
-				err = json.Unmarshal(js, &setting)
-				if err != nil {
-					return nil
-				}
-			}
-		}
-	} else {
-		js, err := json.Marshal(cfg)
-		if err == nil {
-			err = json.Unmarshal(js, &setting)
-			if err != nil {
-				return nil
-			}
-		}
+	err := qconfig.LoadConfig(setting.filePath, cfg)
+	if err != nil {
+		panic(err)
 	}
+
 	gc := gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
@@ -110,7 +46,6 @@ func NewDb(section string) *gorm.DB {
 
 	// 创建数据库连接
 	var db *gorm.DB
-	var err error
 	switch sp[0] {
 	case "sqlite":
 		spp := strings.Split(sp[1], "&")
