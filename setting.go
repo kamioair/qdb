@@ -36,12 +36,11 @@ func initBaseConfig(defaultConn string) *setting {
 	if len(os.Args) > 1 {
 		args := map[string]string{}
 		err := json.Unmarshal([]byte(os.Args[1]), &args)
-		if err != nil {
-			panic(err)
-		}
-		// 自定义配置文件路径
-		if val, ok := args["ConfigPath"]; ok {
-			config.filePath = val
+		if err == nil {
+			// 自定义配置文件路径
+			if val, ok := args["ConfigPath"]; ok {
+				config.filePath = val
+			}
 		}
 	}
 

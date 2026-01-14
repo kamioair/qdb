@@ -89,22 +89,27 @@ func NewDb(sectionName string, defaultConn string) *gorm.DB {
 	if db == nil {
 		panic(errors.New("unknown db type"))
 	}
+
+	save := qconfig.SaveContent{}
+	save.Add(sectionName, "DB Config", cfg)
+	qconfig.SaveConfig(cfg.filePath, save)
 	return db
 }
 
-// 基础数据模型
+// DbSimple 基础数据模型
 type DbSimple struct {
 	Id       uint64         `gorm:"primaryKey"` // 唯一号
 	LastTime qtime.DateTime `gorm:"index"`      // 最后操作时间时间
 }
 
+// DbFull 基础数据模型
 type DbFull struct {
 	Id       uint64         `gorm:"primaryKey"` // 唯一号
 	LastTime qtime.DateTime `gorm:"index"`      // 最后操作时间时间
 	FullInfo string         // 其他扩展内容
 }
 
-// DAO 通用数据访问对象
+// Dao 通用数据访问对象
 type Dao[T any] struct {
 	db *gorm.DB
 }
