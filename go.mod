@@ -3,7 +3,7 @@ module github.com/kamioair/qdb
 go 1.20
 
 require (
-	github.com/kamioair/utils v0.1.0
+	github.com/kamioair/utils v0.1.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0

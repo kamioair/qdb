@@ -19,6 +19,23 @@ import (
 	"time"
 )
 
+// NewDbNotConfig 创建DB，不通过配置
+//
+//	@param conn 数据库连接串，为空使用默认值
+//	         sqlite|./db/data.db&OFF
+//	         sqlserver|用户名:密码@地址?database=数据库&encrypt=disable
+//	         mysql|用户名:密码@tcp(127.0.0.1:3306)/数据库?charset=utf8mb4&parseTime=True&loc=Local
+//	@param openLog 是否打开调试日志，建议默认为 false
+//	@param skipDefaultTransaction 是否跳过默认事务，建议默认为 true
+//	@param noLowerCase 是否不将结构体名和字段名转换为小写字母的形式，建议默认为 true
+func NewDbNotConfig(conn string, openLog bool, skipDefaultTransaction bool, noLowerCase bool) *gorm.DB {
+	cfg := initBaseConfig(conn)
+	cfg.Config.OpenLog = openLog
+	cfg.Config.SkipDefaultTransaction = skipDefaultTransaction
+	cfg.Config.NoLowerCase = noLowerCase
+	return buildDb(cfg)
+}
+
 // NewDb 创建DB
 //
 //	@param: sectionName: 配置节点名称
@@ -28,11 +45,24 @@ import (
 //	         mysql|用户名:密码@tcp(127.0.0.1:3306)/数据库?charset=utf8mb4&parseTime=True&loc=Local
 func NewDb(sectionName string, defaultConn string) *gorm.DB {
 	cfg := initBaseConfig(defaultConn)
+	// 如果节点为空，则读取配置
 	err := qconfig.LoadConfig(cfg.filePath, sectionName, cfg)
 	if err != nil {
 		panic(err)
 	}
 
+	db := buildDb(cfg)
+
+	// 如果节点为空，则保存配置
+	save := qconfig.SaveContent{}
+	save.Add(sectionName, "DB Config", cfg)
+	_ = qconfig.SaveConfig(cfg.filePath, save)
+
+	return db
+}
+
+func buildDb(cfg *setting) *gorm.DB {
+	var err error
 	gc := gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
@@ -89,10 +119,6 @@ func NewDb(sectionName string, defaultConn string) *gorm.DB {
 	if db == nil {
 		panic(errors.New("unknown db type"))
 	}
-
-	save := qconfig.SaveContent{}
-	save.Add(sectionName, "DB Config", cfg)
-	qconfig.SaveConfig(cfg.filePath, save)
 	return db
 }
 
