@@ -3,12 +3,16 @@ module github.com/kamioair/qdb
 go 1.20
 
 require (
-	github.com/kamioair/utils v0.1.1
+	github.com/kamioair/utils v0.0.8
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/driver/sqlserver v1.6.1
 	gorm.io/gorm v1.31.0
+)
+
+replace (
+	github.com/kamioair/utils v0.0.8 => ../utils
 )
 
 require (
