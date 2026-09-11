@@ -8,16 +8,16 @@ import (
 	"time"
 )
 
-// DbBase 基础数据模型
-type DbBase struct {
+// Base 基础数据模型
+type Base struct {
 	Id        uint64         `gorm:"primaryKey;column:id"`       // 唯一号
 	CreateAt  qtime.DateTime `gorm:"column:create_at"`           // 创建时间
 	UpdatedAt qtime.DateTime `gorm:"index;column:updated_at"`    // 最后操作时间
-	FullInfo  string         `gorm:"column:full_info;type:text"` // 其他扩展内容
+	Info  string         `gorm:"column:info;type:text"` // 其他扩展内容
 }
 
 // BeforeCreate 创建前钩子 - 自动设置时间
-func (b *DbBase) BeforeCreate(tx *gorm.DB) error {
+func (b *Base) BeforeCreate(tx *gorm.DB) error {
 	now := qtime.NewDateTime(time.Now())
 	// 如果 CreateAt 为零值，则设置
 	if b.CreateAt == 0 {
@@ -31,7 +31,7 @@ func (b *DbBase) BeforeCreate(tx *gorm.DB) error {
 }
 
 // BeforeUpdate 更新前钩子 - 自动更新 UpdatedAt
-func (b *DbBase) BeforeUpdate(tx *gorm.DB) error {
+func (b *Base) BeforeUpdate(tx *gorm.DB) error {
 	// 只更新 UpdatedAt，不修改 CreateAt
 	if b.UpdatedAt == 0 {
 		b.UpdatedAt = qtime.NewDateTime(time.Now())

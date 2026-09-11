@@ -10,7 +10,7 @@
 - 支持 **SQLite / MySQL / PostgreSQL / SQL Server** 四种数据库（SQLite 可指定 `journal_mode`）。
 - 基于 `Setting` 结构体配置，自动从 `yaml` 读取并回写默认值。
 - 泛型 `Dao[T]` 提供 `Create / Update / Save / Delete / Get* / Count` 等开箱即用方法。
-- 内置 `DbBase` 基模型，自动维护 `id / create_at / updated_at / full_info` 字段。
+- 内置 `Base` 基模型，自动维护 `id / create_at / updated_at / full_info` 字段。
 - `NewDao[T]` 创建时按需 `AutoMigrate`，表结构与结构体保持一致。
 
 ---
@@ -36,7 +36,7 @@ import (
 )
 
 type User struct {
-    qdb.DbBase            // 嵌入基础字段（id / create_at / updated_at / full_info）
+    qdb.Base            // 嵌入基础字段（id / create_at / updated_at / full_info）
     Name   string         `gorm:"column:name"`
     Age    int            `gorm:"column:age"`
 }
@@ -200,7 +200,7 @@ err := orderDao.UpdateNonZero(o)
 
 ```go
 type Order struct {
-    qdb.DbBase
+    qdb.Base
     No    string  `gorm:"column:no;uniqueIndex"`
     Price float64 `gorm:"column:price"`
 }
@@ -227,10 +227,10 @@ _ = orderDao.DeleteCondition("id IN ?", []uint64{1, 2, 3})
 
 ---
 
-## 6. `DbBase`：基础模型
+## 6. `Base`：基础模型
 
 ```go
-type DbBase struct {
+type Base struct {
     Id        uint64         `gorm:"primaryKey;column:id"`
     CreateAt  qtime.DateTime `gorm:"column:create_at"`
     UpdatedAt qtime.DateTime `gorm:"index;column:updated_at"`
@@ -245,16 +245,16 @@ type DbBase struct {
 | `updated_at` | `qtime.DateTime` | 更新时间，带索引；`BeforeCreate` / `BeforeUpdate` 自动填充 |
 | `full_info` | `text` | 业务扩展字段（如 JSON、备注等） |
 
-`DbBase` 已实现 `BeforeCreate` / `BeforeUpdate` 钩子，业务结构体直接嵌入即可：
+`Base` 已实现 `BeforeCreate` / `BeforeUpdate` 钩子，业务结构体直接嵌入即可：
 
 ```go
 type Sample struct {
-    qdb.DbBase
+    qdb.Base
     Name string `gorm:"column:name"`
 }
 ```
 
-> `CreateAt` / `UpdatedAt` 类型为 `qtime.DateTime`（`kamioair/utils/qtime`）。若结构体未嵌入 `DbBase`，可手动使用 `qtime.NewDateTime(time.Now())`。
+> `CreateAt` / `UpdatedAt` 类型为 `qtime.DateTime`（`kamioair/utils/qtime`）。若结构体未嵌入 `Base`，可手动使用 `qtime.NewDateTime(time.Now())`。
 
 ---
 
